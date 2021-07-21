@@ -1,0 +1,80 @@
+openapi: "3.0.1"
+info:
+  description: "API GW to reach DA NLP"
+  version: "${api_version}"
+  title: "${api_name}"
+  contact:
+    email: "${contact_email}"
+
+paths:
+  /ask:
+    x-amazon-apigateway-any-method:
+      summary: "Get the command, given a query"
+      parameters:
+        - $ref: '#/components/parameters/query'
+      responses:
+        200:
+          $ref: '#/components/responses/lambda'
+        500:
+          $ref: '#/components/responses/ServiceErrorResponse'
+      x-amazon-apigateway-integration:
+        credentials: "${api_gateway_role}"
+        uri: "${invoke_arn}"
+        passthroughBehaviour: "when_no_match"
+        httpMethod: "POST"
+        type: "aws_proxy"
+
+components:
+  parameters:
+    query:
+      description: Query
+      in: query
+      name: query
+      schema:
+        type: string
+  schemas:
+    Lambda:
+      type: object
+      title: Lambda
+      required:
+        - isBase64Encoded
+        - statusCode
+        - body
+      properties:
+        isBase64Encoded:
+          type: boolean
+          example: false
+        statusCode:
+          type: number
+          example: 200
+        body:
+          type: object
+  responses:
+    lambda:
+      description: Lambda
+      headers:
+        Access-Control-Allow-Origin:
+          schema:
+            type: "string"
+        Access-Control-Allow-Methods:
+          schema:
+            type: "string"
+        Access-Control-Max-Age:
+          schema:
+            type: "string"
+        Access-Control-Allow-Headers:
+          schema:
+            type: "string"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Lambda'
+    ServiceErrorResponse:
+      description: "Internal Service Error"
+
+x-amazon-apigateway-policy:
+  Version: "2012-10-17"
+  Statement:
+    - Effect: "Allow"
+      Principal: "*"
+      Resource: "execute-api:/*/*/*"
